@@ -1,0 +1,164 @@
+create table patient (
+patient_id serial  primary key,
+f_name varchar,
+l_name varchar,
+age date,
+gender varchar check (gender='male' or gender='female' ),
+phone_number int ,-- numeric(12) check (phone_number  like '20%') --char(11) check( phone_number like '[0-9]*11') ,
+street varchar , 
+district varchar ,
+city varchar , 
+bulding_number int);
+alter sequence patient_patient_id_seq RESTART WITH 1000 INCREMENT BY 3;
+alter table patient
+alter column phone_number type char(11)
+alter table patient 
+ ADD CONSTRAINT  phone_number check( phone_number like '[0-9]*11');
+ create type genders as enum( 'male', 'female');
+ alter table patient 
+ alter column gender type genders using gender::text::genders;
+
+create table pharmasist (
+pharmasist_id serial  primary key,
+f_name varchar,
+l_name varchar,
+age date,
+gender varchar check (gender='male' or gender='female' ),
+phone_number int ,-- numeric(12) check (phone_number  like '20%') --char(11) check( phone_number like '[0-9]*11') ,
+street varchar , 
+district varchar ,
+city varchar , 
+bulding_number int , 
+shift_time timestamp,
+email varchar);
+
+		
+		
+create table manufacturer (
+company_id int  primary key,
+company_name varchar,
+street varchar , 
+district varchar ,
+city varchar );
+
+
+
+create table drug (
+drug_id int primary key,
+drug_name varchar,
+issue_date date,
+exp_date date,
+active_sub varchar,
+stock int,
+restriction varchar,
+dose varchar,
+d_type varchar,
+purpose varchar,
+price int,
+company_id serial,
+--company_id serial foreign key references manufacturer(company_id)
+FOREIGN KEY (company_id) REFERENCES manufacturer(company_id));
+
+
+
+create table delivery (
+delivery_id serial  primary key,
+f_name varchar,
+age date,
+gender varchar check (gender='male' or gender='female' ),
+phone_number int ,-- numeric(12) check (phone_number  like '20%') --char(11) check( phone_number like '[0-9]*11') , 
+shift_time timestamp,
+order_id int,
+FOREIGN KEY (order_id) REFERENCES orders(order_id));
+alter sequence delivery_delivery_id_seq RESTART WITH 20 ;
+
+
+
+create table orders (
+order_id serial  primary key,
+patient_id int,
+pharmasist_id int,
+FOREIGN KEY (patient_id) REFERENCES patient(patient_id),--patient_id serial  foreign key references patient(patient_id) ,
+FOREIGN KEY (pharmasist_id) REFERENCES pharmasist(pharmasist_id),--pharmasist_id serial  foreign key references pharmasist(pharmasist_id),	
+delivery_date date ,
+total_price decimal );	
+alter sequence orders_order_id_seq RESTART WITH 1 ;
+
+
+create table contact (
+patient_id int,
+pharmasist_id int,
+FOREIGN KEY (patient_id) REFERENCES patient(patient_id),--patient_id serial  foreign key references patient(patient_id) ,
+FOREIGN KEY (pharmasist_id) REFERENCES pharmasist(pharmasist_id),
+/*patient_id serial  foreign key references patient(patient_id) ,
+pharmasist_id serial  foreign key references pharmasist(pharmasist_id),*/	
+interaction_date timestamp);
+
+
+
+create table item (
+/*drug_id serial  foreign key references drug(drug_id) ,
+orders_id serial  foreign key references orders(order_id)*/
+order_id int,
+drug_id int,
+FOREIGN KEY (order_id) REFERENCES orders(order_id),
+FOREIGN KEY (drug_id) REFERENCES drug(drug_id)
+);
+
+
+
+create table drug_purpose (
+drug_id int, 
+purpose varchar ,  
+PRIMARY KEY (drug_id , purpose ) , 
+FOREIGN KEY (drug_id)REFERENCES drug(drug_id)
+);
+
+create view drugpurpose(drug,drug_id, purpose)
+as select d.drug_name,d.drug_id,p.purpose
+ from drug as d , drug_purpose as p
+ where d.drug_id = p.drug_id
+ order by d.drug_id;
+
+create table drug_restrictions (
+drug_id int , 
+restrictions varchar ,  
+PRIMARY KEY (drug_id , restrictions ) , 
+FOREIGN KEY (drug_id) 
+REFERENCES drug(drug_id)
+);
+
+create view DrugRestrictions(drug,drug_id ,restriction)
+as select d.drug_name,d.drug_id,r.restrictions
+ from drug as d , drug_restrictions as r
+ where d.drug_id = r.drug_id
+ order by d.drug_id;
+ 
+ 
+create table phone_number (
+patient_id int ,
+phone_no char(11) check( phone_no like '[0-9]*11') ,
+PRIMARY KEY (patient_id,phone_no),
+FOREIGN KEY (patient_id) 
+REFERENCES patient(patient_id)
+);
+
+create view patient_phone(patientF_name,patientL_name,patient_id, phone)
+as select p.f_name,p.l_name,p.patient_id,no.phone_no
+ from patient as p, phone_number as no
+ where p.patient_id  = no.patient_id 
+ order by p.patient_id ;
+
+create table patient_diseases (
+patient_id int ,
+diseases_history varchar ,
+PRIMARY KEY (patient_id,diseases_history),
+FOREIGN KEY (patient_id) 
+REFERENCES patient(patient_id)
+);
+
+create view PatientDisease(patientF_name,patientL_name,patient_id, chronic_diseases)
+as select p.f_name,p.l_name, p.patient_id ,d.diseases_history
+ from patient as p, patient_diseases as d
+ where p.patient_id  = d.patient_id 
+ order by p.patient_id;
